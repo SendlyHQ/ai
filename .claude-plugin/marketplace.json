@@ -1,0 +1,54 @@
+{
+  "$schema": "https://code.claude.com/schemas/marketplace.json",
+  "name": "sendly",
+  "description": "Official Sendly plugins for Claude Code. SMS, MMS, WhatsApp, RCS and phone verification.",
+  "owner": {
+    "name": "Sendly",
+    "email": "support@sendly.live",
+    "url": "https://sendly.live"
+  },
+  "plugins": [
+    {
+      "name": "sendly",
+      "displayName": "Sendly",
+      "description": "Connects Claude Code to the hosted Sendly MCP server so it can send SMS and MMS, run OTP verification flows, manage conversations, contacts, campaigns, templates, webhooks and phone numbers. Reads SENDLY_API_KEY from your environment.",
+      "source": "./",
+      "author": {
+        "name": "Sendly",
+        "email": "support@sendly.live"
+      },
+      "homepage": "https://sendly.live/docs/mcp",
+      "repository": "https://github.com/SendlyHQ/ai",
+      "license": "MIT",
+      "category": "productivity",
+      "keywords": [
+        "sendly",
+        "sms",
+        "mms",
+        "whatsapp",
+        "rcs",
+        "otp",
+        "phone-verification",
+        "messaging"
+      ]
+    },
+    {
+      "name": "sendly-skills",
+      "displayName": "Sendly Skills",
+      "description": "Agent Skills that teach Claude how to send SMS well: message composition, opt-out and quiet-hours compliance, and phone verification flows. Instructions only, no tools and no credentials.",
+      "source": {
+        "source": "github",
+        "repo": "SendlyHQ/sendly-skills"
+      },
+      "author": {
+        "name": "Sendly",
+        "email": "support@sendly.live"
+      },
+      "homepage": "https://github.com/SendlyHQ/sendly-skills",
+      "repository": "https://github.com/SendlyHQ/sendly-skills",
+      "license": "MIT",
+      "category": "productivity",
+      "keywords": ["sendly", "sms", "compliance", "otp", "agent-skills"]
+    }
+  ]
+}

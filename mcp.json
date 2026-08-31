@@ -1,0 +1,121 @@
+{
+  "name": "Sendly",
+  "description": "SMS, MMS, WhatsApp, RCS and phone verification for AI agents. Send messages, run OTP flows, manage conversations, contacts, campaigns, templates, webhooks and phone numbers.",
+  "url": "https://sendly.live",
+  "api_base_url": "https://sendly.live/api/v1",
+  "mcp_servers": [
+    {
+      "name": "sendly",
+      "description": "Hosted Sendly MCP server. No install, no local process, no Node.js.",
+      "recommended": true,
+      "transport": "streamable-http",
+      "url": "https://mcp.sendly.live",
+      "alternate_urls": ["https://mcp.sendly.live/mcp"],
+      "session": "stateless",
+      "authentication": {
+        "type": "bearer",
+        "header": "Authorization",
+        "prefix": "Bearer",
+        "credential": "Sendly API key",
+        "accepted_key_prefixes": ["sk_test_v1_", "sk_live_v1_"],
+        "obtain_key": "https://sendly.live/api-keys",
+        "obtain_key_guide": "https://sendly.live/auth.md",
+        "note": "A key that does not start with an accepted prefix is rejected with 401 before a session is opened."
+      },
+      "health": {
+        "url": "https://mcp.sendly.live/health",
+        "authentication": "none",
+        "method": "GET",
+        "purpose": "liveness only",
+        "note": "The version and tools fields in the response body are constants compiled into the worker, not read from the running server. Do not treat either as a source of truth. Enumerate tools with tools/list."
+      },
+      "cors": "enabled"
+    },
+    {
+      "name": "sendly-local",
+      "description": "The Sendly MCP server as a published npm package, running locally over stdio, for when API traffic must originate from your own machine.",
+      "recommended": false,
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@sendly/mcp"],
+      "package": "@sendly/mcp",
+      "registry": "https://www.npmjs.com/package/@sendly/mcp",
+      "engines": {
+        "node": ">=18.0.0"
+      },
+      "env": {
+        "SENDLY_API_KEY": {
+          "description": "Sendly API key. The process exits immediately if this is unset.",
+          "required": true
+        },
+        "SENDLY_BASE_URL": {
+          "description": "Override the API host. Must be HTTPS unless it points at localhost or 127.0.0.1.",
+          "required": false,
+          "default": "https://sendly.live"
+        }
+      }
+    }
+  ],
+  "tools": {
+    "discovery": "Call tools/list against the server you are connected to. Both servers register the same tool module, but the hosted server bundles it from the repository when it is built and deployed while the npm package carries the copy from its last publish, so the two can expose different tools. tools/list is the only authoritative answer for the server in front of you.",
+    "reference": "https://github.com/SendlyHQ/ai/blob/main/reference/mcp-tools.md",
+    "note": "No tool count is stated here on purpose. A hand-written count drifts from the server the moment a tool is added. tools/list is authoritative. The generated files under reference/ are the offline copy of the repository tool module, which is what the hosted server bundles, so they track the hosted server rather than the published npm package."
+  },
+  "client_config_examples": {
+    "hosted": {
+      "mcpServers": {
+        "sendly": {
+          "type": "http",
+          "url": "https://mcp.sendly.live",
+          "headers": {
+            "Authorization": "Bearer sk_test_v1_..."
+          }
+        }
+      }
+    },
+    "local": {
+      "mcpServers": {
+        "sendly": {
+          "command": "npx",
+          "args": ["-y", "@sendly/mcp"],
+          "env": {
+            "SENDLY_API_KEY": "sk_test_v1_..."
+          }
+        }
+      }
+    }
+  },
+  "capabilities": [
+    "messaging",
+    "whatsapp",
+    "rcs",
+    "verification",
+    "conversations",
+    "contacts",
+    "campaigns",
+    "templates",
+    "batches",
+    "scheduling",
+    "webhooks",
+    "phone_numbers",
+    "tendlc_registration",
+    "business_verification",
+    "api_keys",
+    "credits",
+    "short_links"
+  ],
+  "documentation": {
+    "agents": "https://github.com/SendlyHQ/ai/blob/main/AGENTS.md",
+    "reference": "https://github.com/SendlyHQ/ai/tree/main/reference",
+    "guides": "https://github.com/SendlyHQ/ai/tree/main/guides",
+    "mcp_docs": "https://sendly.live/docs/mcp",
+    "full_docs": "https://sendly.live/docs",
+    "openapi": "https://sendly.live/openapi.yaml",
+    "openai_tools": "https://sendly.live/openai-tools.json",
+    "llms_txt": "https://sendly.live/llms.txt",
+    "auth_guide": "https://sendly.live/auth.md",
+    "errors": "https://sendly.live/errors.md"
+  },
+  "repository": "https://github.com/SendlyHQ/ai",
+  "support": "support@sendly.live"
+}

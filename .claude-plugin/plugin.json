@@ -1,0 +1,24 @@
+{
+  "name": "sendly",
+  "displayName": "Sendly",
+  "description": "Connects Claude Code to the hosted Sendly MCP server so it can send SMS and MMS, run OTP verification flows, manage conversations, contacts, campaigns, templates, webhooks and phone numbers.",
+  "author": {
+    "name": "Sendly",
+    "email": "support@sendly.live",
+    "url": "https://sendly.live"
+  },
+  "homepage": "https://sendly.live/docs/mcp",
+  "repository": "https://github.com/SendlyHQ/ai",
+  "license": "MIT",
+  "keywords": [
+    "sendly",
+    "sms",
+    "mms",
+    "whatsapp",
+    "rcs",
+    "otp",
+    "phone-verification",
+    "messaging"
+  ],
+  "mcpServers": "./.mcp.json"
+}

@@ -1,0 +1,340 @@
+{
+  "name": "Sendly",
+  "description": "Developer-first API for SMS, MMS, WhatsApp, RCS and phone verification.",
+  "homepage": "https://sendly.live",
+  "repository": "https://github.com/SendlyHQ/ai",
+  "entrypoint": "https://github.com/SendlyHQ/ai/blob/main/AGENTS.md",
+  "api": {
+    "base_url": "https://sendly.live/api/v1",
+    "protocol": "rest",
+    "format": "json",
+    "openapi": "https://sendly.live/openapi.yaml"
+  },
+  "auth": {
+    "type": "api_key",
+    "header": "Authorization",
+    "prefix": "Bearer",
+    "env_var": "SENDLY_API_KEY",
+    "key_types": [
+      {
+        "prefix": "sk_test_v1_",
+        "name": "test",
+        "behavior": "Every send is simulated. Nothing reaches a handset, nothing is charged, and the response shape is identical to live. A default test key is created when an account completes onboarding, and more can be minted at any time with POST /account/keys."
+      },
+      {
+        "prefix": "sk_live_v1_",
+        "name": "live",
+        "behavior": "Real delivery, charged in credits. Creating a live key requires an approved sender on the account."
+      }
+    ],
+    "scopes": [
+      "sms:send",
+      "sms:read",
+      "verify:send",
+      "verify:read",
+      "webhooks:read",
+      "webhooks:write",
+      "templates:read",
+      "templates:write",
+      "campaigns:read",
+      "campaigns:write",
+      "campaigns:send",
+      "contacts:read",
+      "contacts:write",
+      "numbers:read",
+      "numbers:write",
+      "tendlc:read",
+      "tendlc:write"
+    ],
+    "scope_note": "An unscoped key carries full access. Scopes cannot be widened after creation; mint a new key instead.",
+    "obtain_key": "https://sendly.live/api-keys",
+    "obtain_key_guide": "https://sendly.live/auth.md",
+    "verify_key": "GET /credits",
+    "rate_limit_headers": [
+      "X-RateLimit-Limit",
+      "X-RateLimit-Remaining",
+      "X-RateLimit-Reset",
+      "Retry-After"
+    ],
+    "rate_limit_headers_note": "Set by the per-key rate limiter, which most but not all v1 endpoints run. An endpoint without the limiter sets none of these headers, so read them when present and never require them. A 429 carries Retry-After from the per-key limiter, or retryAfter in the body from the per-number limit on verification codes."
+  },
+  "capabilities": [
+    {
+      "id": "messaging",
+      "name": "SMS and MMS",
+      "description": "Send text and media messages domestically and internationally. MMS is US and Canada only.",
+      "api": "POST /messages",
+      "cli": "sendly send --to +15005550000 --text 'Hello'",
+      "mcp_tool": "send_sms",
+      "requires": ["api_key", "approved_sender_for_live"]
+    },
+    {
+      "id": "verification",
+      "name": "Phone verification (OTP)",
+      "description": "Send a one-time code and check it. With a test key the response carries sandbox_code so the whole flow can be tested without a handset.",
+      "api": "POST /verify then POST /verify/{id}/check",
+      "cli": "sendly verify send --to +15005550000",
+      "mcp_tool": "send_otp",
+      "requires": ["api_key"]
+    },
+    {
+      "id": "whatsapp",
+      "name": "WhatsApp",
+      "description": "Free-form messages inside the 24-hour customer-service window, and pre-approved templates outside it.",
+      "api": "POST /messages with channel: \"whatsapp\"",
+      "cli": "sendly whatsapp send",
+      "mcp_tool": "send_whatsapp",
+      "requires": ["whatsapp_connected_sender"]
+    },
+    {
+      "id": "rcs",
+      "name": "RCS",
+      "description": "Branded rich messaging with tappable suggestion chips, falling back to SMS where RCS is unavailable.",
+      "api": "POST /messages with channel: \"rcs\"",
+      "cli": "sendly rcs send",
+      "mcp_tool": "send_rcs",
+      "requires": ["live_api_key", "rcs_agent"]
+    },
+    {
+      "id": "conversations",
+      "name": "Conversations",
+      "description": "Inbound replies threaded against contacts, with drafts, labels, rules and suggested replies.",
+      "api": "GET /conversations",
+      "cli": "sendly conversations list",
+      "mcp_tool": "list_conversations",
+      "requires": ["api_key"]
+    },
+    {
+      "id": "contacts",
+      "name": "Contacts and lists",
+      "description": "Contact records with opt-out state, carrier lookup, CSV import and list membership.",
+      "api": "GET /contacts",
+      "cli": "sendly contacts list",
+      "mcp_tool": "list_contacts",
+      "requires": ["api_key"]
+    },
+    {
+      "id": "campaigns",
+      "name": "Campaigns, templates and batches",
+      "description": "Bulk sending against contact lists, with reusable templates and previewable batches.",
+      "api": "POST /campaigns",
+      "cli": "sendly campaigns create",
+      "mcp_tool": "create_campaign",
+      "requires": ["api_key", "approved_sender_for_live"]
+    },
+    {
+      "id": "scheduling",
+      "name": "Scheduled sends",
+      "description": "Queue a message for a future time. This is the correct recovery from a quiet-hours block: schedule for the nextAllowedTime the error returns.",
+      "api": "POST /messages/schedule",
+      "cli": "sendly sms schedule",
+      "mcp_tool": "schedule_sms",
+      "requires": ["api_key"]
+    },
+    {
+      "id": "numbers",
+      "name": "Phone numbers",
+      "description": "Search availability, buy, configure and release numbers. Buying is layered: US long codes need 10DLC registration first, and many countries require per-order documentation.",
+      "api": "GET /numbers/available then POST /numbers/buy",
+      "cli": "sendly numbers search",
+      "mcp_tool": "search_available_numbers",
+      "requires": ["live_api_key", "country_requirements"]
+    },
+    {
+      "id": "tendlc",
+      "name": "US 10DLC registration",
+      "description": "Register a brand and campaign for US A2P messaging, then assign numbers to the campaign.",
+      "api": "POST /tendlc/brands then POST /tendlc/campaigns",
+      "cli": "sendly 10dlc brands create",
+      "mcp_tool": "tendlc_create_brand",
+      "requires": ["live_api_key", "business_details"]
+    },
+    {
+      "id": "webhooks",
+      "name": "Webhooks",
+      "description": "Signed HTTP callbacks for delivery status, inbound messages, opt-outs and lifecycle events. Signature header X-Sendly-Signature is sha256=HMAC over {timestamp}.{raw body}.",
+      "api": "POST /webhooks",
+      "cli": "sendly webhooks create",
+      "mcp_tool": "create_webhook",
+      "requires": ["api_key", "public_https_endpoint"]
+    },
+    {
+      "id": "short_links",
+      "name": "Link shortening",
+      "description": "Shorten URLs for inclusion in messages, with per-link click tracking and disable.",
+      "api": "POST /links",
+      "cli": "sendly links create",
+      "mcp_tool": "shorten_url",
+      "requires": ["api_key"]
+    },
+    {
+      "id": "credits",
+      "name": "Credits and billing",
+      "description": "Check the balance and read the transaction ledger. Message cost varies by destination country and segment count.",
+      "api": "GET /credits",
+      "cli": "sendly credits balance",
+      "mcp_tool": "get_credits",
+      "requires": ["api_key"]
+    },
+    {
+      "id": "keys",
+      "name": "API key management",
+      "description": "Create, rotate and revoke scoped API keys. A raw key value is returned exactly once.",
+      "api": "POST /account/keys",
+      "cli": "sendly keys create --type test",
+      "mcp_tool": "create_api_key",
+      "requires": ["api_key_or_cli_session"]
+    }
+  ],
+  "compliance": {
+    "message_type": {
+      "values": ["marketing", "transactional"],
+      "default": "marketing",
+      "note": "Omitting messageType resolves to marketing, which means quiet hours apply. Set it explicitly on every send."
+    },
+    "quiet_hours": {
+      "scope": "per_country",
+      "note": "There is no single global quiet-hours window. Each country has its own, evaluated in the recipient's local time. Quoting the US window as universal is wrong.",
+      "reference": "https://github.com/SendlyHQ/ai/blob/main/reference/compliance.md",
+      "block_error": "compliance_blocked / QUIET_HOURS_VIOLATION",
+      "recovery": "Schedule for the nextAllowedTime returned in the error, using POST /messages/schedule."
+    },
+    "restricted_content": {
+      "policy": "SHAFT",
+      "expands_to": "Sex, hate, alcohol, firearms, tobacco and cannabis",
+      "block_error": "compliance_blocked / SHAFT_CONTENT_DETECTED",
+      "scope": "Checked on the message text of every send, before a sender is resolved. Not scoped to a sender type, and not skipped for test keys or sandbox destinations."
+    },
+    "opt_out": {
+      "handling": "automatic",
+      "note": "STOP marks the contact opted out and fires message.opt_out. START opts back in and fires message.opt_in. Sending to an opted-out contact returns contact_opted_out and must never be retried.",
+      "registered_keywords": [
+        "STOP",
+        "STOPALL",
+        "UNSUBSCRIBE",
+        "CANCEL",
+        "END",
+        "QUIT"
+      ]
+    },
+    "phone_format": "E.164"
+  },
+  "sandbox": {
+    "test_key_behavior": "Every send simulated, for any destination.",
+    "destination_numbers": {
+      "+15005550000": "delivered",
+      "+15005550001": "failed, invalid phone number",
+      "+15005550002": "failed, cannot route to destination",
+      "+15005550003": "failed, queue full",
+      "+15005550004": "failed, rate limit exceeded",
+      "+15005550006": "failed, carrier violation"
+    },
+    "note": "Sandbox destinations simulate regardless of key type, so they are safe in a suite running with production credentials. Opt-out and quiet-hours checks are skipped for test keys and sandbox destinations; SHAFT restricted-content screening is not and runs on every send. A green sandbox run does not prove a live send will pass.",
+    "honest_send_flag": "Any simulated send returns simulated: true. On a live key it also returns simulatedReason and actionUrl. Check that field before reporting success; the stored status is still \"delivered\"."
+  },
+  "idempotency": {
+    "headers": ["Idempotency-Key", "X-Idempotency-Key"],
+    "note": "Honoured on message send, group send, scheduling, batches and verification start. Not honoured on number purchase, so never build a naive retry loop around buying a number.",
+    "reference": "https://sendly.live/docs/idempotency"
+  },
+  "mcp": {
+    "hosted": {
+      "url": "https://mcp.sendly.live",
+      "transport": "streamable-http",
+      "auth": "Authorization: Bearer <api key>",
+      "health": "https://mcp.sendly.live/health",
+      "health_note": "Liveness only. The version and tools fields it returns are constants compiled into the worker, not read from the running server, so neither is a source of truth."
+    },
+    "local": {
+      "command": "npx -y @sendly/mcp",
+      "transport": "stdio",
+      "env": ["SENDLY_API_KEY", "SENDLY_BASE_URL"]
+    },
+    "manifest": "https://github.com/SendlyHQ/ai/blob/main/mcp.json",
+    "discovery": "https://sendly.live/.well-known/mcp.json",
+    "tool_list": "Call tools/list against the server you are connected to. Both servers register the same tool module, but the hosted server bundles it from the repository at build time while the npm package carries the copy from its last publish, so the two can expose different tools. reference/mcp-tools.md is generated from the repository module, so it tracks the hosted server."
+  },
+  "skills": {
+    "install": "npx skills add SendlyHQ/sendly-skills",
+    "repository": "https://github.com/SendlyHQ/sendly-skills",
+    "claude_code_plugin": "/plugin marketplace add SendlyHQ/ai"
+  },
+  "cli": {
+    "package": "@sendly/cli",
+    "binary": "sendly",
+    "install": "npm install -g @sendly/cli",
+    "install_homebrew": "brew install SendlyHQ/tap/sendly",
+    "auth": "sendly login",
+    "global_flags": ["--json", "-q/--quiet"],
+    "note": "Output switches to JSON automatically when stdout is not a TTY, so piped output is parseable without --json.",
+    "repository": "https://github.com/SendlyHQ/sendly-cli"
+  },
+  "sdks": {
+    "node": {
+      "package": "@sendly/node",
+      "install": "npm install @sendly/node",
+      "repository": "https://github.com/SendlyHQ/sendly-node"
+    },
+    "python": {
+      "package": "sendly",
+      "install": "pip install sendly",
+      "repository": "https://github.com/SendlyHQ/sendly-python"
+    },
+    "go": {
+      "package": "github.com/SendlyHQ/sendly-go/v3",
+      "install": "go get github.com/SendlyHQ/sendly-go/v3",
+      "repository": "https://github.com/SendlyHQ/sendly-go"
+    },
+    "ruby": {
+      "package": "sendly",
+      "install": "gem install sendly",
+      "repository": "https://github.com/SendlyHQ/sendly-ruby"
+    },
+    "php": {
+      "package": "sendly/sendly-php",
+      "install": "composer require sendly/sendly-php",
+      "repository": "https://github.com/SendlyHQ/sendly-php"
+    },
+    "java": {
+      "package": "live.sendly:sendly-java",
+      "install": "Add live.sendly:sendly-java to your build",
+      "repository": "https://github.com/SendlyHQ/sendly-java"
+    },
+    "rust": {
+      "package": "sendly",
+      "install": "cargo add sendly",
+      "repository": "https://github.com/SendlyHQ/sendly-rust"
+    },
+    "dotnet": {
+      "package": "Sendly",
+      "install": "dotnet add package Sendly",
+      "repository": "https://github.com/SendlyHQ/sendly-dotnet"
+    }
+  },
+  "reference": {
+    "generated": true,
+    "verified_in_ci": true,
+    "note": "Everything under reference/ is generated from the Sendly source tree and re-derived by a checked-in verifier in CI. Counts, tool names, endpoint paths, error codes and per-country compliance windows are never hand-written. Where prose and reference/ disagree, reference/ is correct.",
+    "index": "https://github.com/SendlyHQ/ai/tree/main/reference",
+    "compliance": "https://github.com/SendlyHQ/ai/blob/main/reference/compliance.md",
+    "endpoints": "https://github.com/SendlyHQ/ai/blob/main/reference/endpoints.md",
+    "mcp_tools": "https://github.com/SendlyHQ/ai/blob/main/reference/mcp-tools.md",
+    "guides": "https://github.com/SendlyHQ/ai/tree/main/guides",
+    "toolkits": "https://github.com/SendlyHQ/ai/tree/main/toolkits"
+  },
+  "resources": {
+    "agents_entrypoint": "https://sendly.live/agents.md",
+    "auth_guide": "https://sendly.live/auth.md",
+    "quickstart": "https://sendly.live/agent-quickstart.md",
+    "errors": "https://sendly.live/errors.md",
+    "pricing": "https://sendly.live/pricing.md",
+    "llms_txt": "https://sendly.live/llms.txt",
+    "openapi": "https://sendly.live/openapi.yaml",
+    "openai_tools": "https://sendly.live/openai-tools.json",
+    "docs": "https://sendly.live/docs",
+    "dashboard": "https://sendly.live/dashboard",
+    "api_keys": "https://sendly.live/api-keys",
+    "github": "https://github.com/SendlyHQ",
+    "support": "support@sendly.live"
+  }
+}

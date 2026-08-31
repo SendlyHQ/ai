@@ -1,0 +1,136 @@
+{
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "send_sms",
+        "description": "Send an SMS message to a phone number using Sendly. Returns the message id and delivery status, plus the segment count and credits charged on a live send. A send on a test key, or to a sandbox destination, is simulated and returns neither of those. Calls POST /api/v1/messages.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "to": {
+              "type": "string",
+              "description": "Recipient phone number in E.164 format (e.g. +14155552671)"
+            },
+            "text": {
+              "type": "string",
+              "description": "Message body to send"
+            },
+            "from": {
+              "type": "string",
+              "description": "One of your own active Sendly numbers in E.164 format. Omit to use your account default sender. An unrecognised value is rejected for US and Canada destinations, and ignored for international destinations, where your verified sender ID is used instead."
+            },
+            "messageType": {
+              "type": "string",
+              "enum": ["marketing", "transactional"],
+              "description": "Compliance classification. Defaults to marketing, which is blocked during the recipient country's quiet hours (9pm to 8am in the US, 8pm to 9am in the UK, and a per-country window elsewhere). Use transactional only for one-time passwords, alerts and receipts, which send at any hour. Labelling promotional content as transactional is a compliance violation."
+            },
+            "metadata": {
+              "type": "object",
+              "description": "Key-value JSON object stored on the message and echoed in webhook payloads. Must serialise to under 4KB."
+            }
+          },
+          "required": ["to", "text"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "send_otp",
+        "description": "Send a one-time password to a phone number. Returns a verification id used to check the code, plus the expiry time. Calls POST /api/v1/verify.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "to": {
+              "type": "string",
+              "description": "Recipient phone number in E.164 format (e.g. +14155552671)"
+            },
+            "app_name": {
+              "type": "string",
+              "description": "Your app or service name, shown in the verification message. Defaults to your account's brand or business name."
+            },
+            "code_length": {
+              "type": "integer",
+              "description": "Number of digits in the code. Defaults to 6.",
+              "minimum": 4,
+              "maximum": 10
+            },
+            "timeout_secs": {
+              "type": "integer",
+              "description": "Seconds until the code expires. Defaults to 300 (5 minutes).",
+              "minimum": 60,
+              "maximum": 3600
+            }
+          },
+          "required": ["to"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "check_otp",
+        "description": "Check a one-time password entered by the user. Returns status 'verified' on success. A wrong code returns error 'invalid_code' with the number of attempts remaining, an expired code returns 'expired', and an exhausted code returns 'max_attempts_exceeded'. Calls POST /api/v1/verify/{verification_id}/check.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "verification_id": {
+              "type": "string",
+              "description": "The verification id returned by send_otp. Goes in the URL path."
+            },
+            "code": {
+              "type": "string",
+              "description": "The code entered by the user"
+            }
+          },
+          "required": ["verification_id", "code"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "list_messages",
+        "description": "Retrieve recent outbound and inbound messages, newest first. Supports pagination and full-text search. Calls GET /api/v1/messages.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "description": "Number of messages to return. Defaults to 50, capped at 100.",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "offset": {
+              "type": "integer",
+              "description": "Number of messages to skip for pagination. Defaults to 0.",
+              "minimum": 0
+            },
+            "q": {
+              "type": "string",
+              "description": "Full-text search query. Filters messages by body text."
+            },
+            "sandbox": {
+              "type": "boolean",
+              "description": "Set to true on a live key to read sandbox messages instead of production ones. A test key always reads sandbox messages and ignores this."
+            }
+          },
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_balance",
+        "description": "Check the Sendly credit balance. One credit is $0.01. An SMS to the US or Canada costs 2 credits per segment. Returns balance, reservedBalance (held for scheduled sends) and availableBalance. Calls GET /api/v1/credits.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    }
+  ]
+}
