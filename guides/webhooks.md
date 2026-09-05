@@ -296,6 +296,10 @@ Numbers and porting: `port.completed`, `port_out.requested`, `port_out.completed
 WhatsApp: `whatsapp_account.connected`, `whatsapp_account.failed`, `whatsapp_template.approved`,
 `whatsapp_template.rejected`, `whatsapp_template.paused`.
 
+Calls (early access): `call.started` (answered), `call.completed` (ended — the payload's `status` is
+`completed`, `cancelled`, `declined`, `no_answer`, `busy` or `failed`, with `duration_secs`), and
+`call.recording.ready` (a recording can be fetched via `GET /api/calls/:id`).
+
 Two honest caveats. `message.retrying`, `draft.created`, `draft.approved` and `draft.rejected` are
 accepted on subscription but are not emitted by any current code path, so do not build a flow that
 waits on them. And `GET /api/v1/webhooks/event-types` is shadowed by `GET /api/v1/webhooks/:id` in
