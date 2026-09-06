@@ -296,6 +296,12 @@ Numbers and porting: `port.completed`, `port_out.requested`, `port_out.completed
 WhatsApp: `whatsapp_account.connected`, `whatsapp_account.failed`, `whatsapp_template.approved`,
 `whatsapp_template.rejected`, `whatsapp_template.paused`.
 
+RCS registration (early access): `rcs_brand.verified` and `rcs_brand.failed` for the one-time
+business check, then per agent `rcs_agent.testing` (branding approved, it can reach invited test
+phones), `rcs_agent.live` (carrier launch done, it can reach everyone), `rcs_agent.rejected` (the
+payload's `stage` is `basics` or `launch`, with a `reason`) and `rcs_agent.action_required` (Sendly
+asked for changes before sending it on, with a `note`). Ids in these payloads are Sendly ids.
+
 Calls (early access): `call.started` (answered), `call.completed` (ended — the payload's `status` is
 `completed`, `cancelled`, `declined`, `no_answer`, `busy` or `failed`, with `duration_secs`), and
 `call.recording.ready` (a recording can be fetched via `GET /api/calls/:id`).
