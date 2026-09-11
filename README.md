@@ -163,7 +163,7 @@ a reserved word.
 **Go** ([`SendlyHQ/sendly-go`](https://github.com/SendlyHQ/sendly-go))
 
 ```bash
-go get github.com/SendlyHQ/sendly-go/v3
+go get github.com/SendlyHQ/sendly-go/v4
 ```
 
 ```go

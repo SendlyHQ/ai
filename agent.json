@@ -281,8 +281,8 @@
       "repository": "https://github.com/SendlyHQ/sendly-python"
     },
     "go": {
-      "package": "github.com/SendlyHQ/sendly-go/v3",
-      "install": "go get github.com/SendlyHQ/sendly-go/v3",
+      "package": "github.com/SendlyHQ/sendly-go/v4",
+      "install": "go get github.com/SendlyHQ/sendly-go/v4",
       "repository": "https://github.com/SendlyHQ/sendly-go"
     },
     "ruby": {
