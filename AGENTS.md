@@ -307,8 +307,7 @@ Set it explicitly on every send. This is the most common cause of a message that
 Do not reach for `transactional` as a way around quiet hours. If a message marked
 transactional reads as promotional **and** the destination is currently inside its
 quiet-hours window, the send is rejected with the matched keywords in the response.
-Misclassification is also a real legal exposure for the account owner, and the API
-returns a compliance warning on early transactional sends saying so.
+Misclassification is also a real legal exposure for the account owner.
 
 ---
 
