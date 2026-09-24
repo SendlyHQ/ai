@@ -186,9 +186,11 @@ visible on `GET /api/v1/messages/{id}` and as `error_code` in the `message.faile
 | `E019` | 10DLC campaign or brand suspended | Account level problem, contact support |
 | `E021` | 10DLC daily message limit reached | Wait for the daily reset |
 | `E023` | URL blocked by carrier | Replace the link. Public shorteners are the usual cause |
+| `E028` | Sending network temporarily unavailable | The message may not have been sent, and its credits were refunded. Not retried automatically: check whether the recipient got it before you send it again |
 
 Transient codes are retried for you when durable retry is enabled for the account, and the message
 sits in `retrying` while that happens. Do not resend a message in `retrying`: you will duplicate it.
+`E028` is the exception: it is never retried for you. Delivery is uncertain, so a resend can reach the recipient twice.
 
 ## A retry policy that is correct
 
