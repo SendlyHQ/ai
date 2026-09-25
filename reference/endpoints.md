@@ -8,7 +8,7 @@ source, and `npm run verify:ai-reference` to prove it is still true.
 
 The public API is versioned under `/api/v1` and served from `https://sendly.live/api/v1`.
 245 method and path pairs are registered across 186 unique paths
-in 29 groups, out of 856 route registrations in total.
+in 29 groups, out of 855 route registrations in total.
 
 The SDKs, the CLI and the MCP server all reach these paths with an API key. A path written
 `:id` takes a single segment there.

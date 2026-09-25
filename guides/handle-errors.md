@@ -147,9 +147,6 @@ A 404 on `/api/v1/numbers/*`, `/api/v1/tendlc/*` or `/api/v1/rcs/*` usually mean
 not enabled for that account, not that the path is wrong. Those routes are hidden rather than
 returning a 403 when the feature is off.
 
-One known routing gap: `GET /api/v1/webhooks/event-types` is shadowed by `GET /api/v1/webhooks/:id`
-and answers `404 not_found`. Use the event list in [webhooks.md](webhooks.md) instead.
-
 ## Server side and transient
 
 | HTTP | `error` | Recovery |

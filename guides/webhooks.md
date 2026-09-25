@@ -306,10 +306,9 @@ Calls (early access): `call.started` (answered), `call.completed` (ended — the
 `completed`, `cancelled`, `declined`, `no_answer`, `busy` or `failed`, with `duration_secs`), and
 `call.recording.ready` (a recording can be fetched via `GET /api/calls/:id`).
 
-Two honest caveats. `message.retrying`, `draft.created`, `draft.approved` and `draft.rejected` are
+One honest caveat. `message.retrying`, `draft.created`, `draft.approved` and `draft.rejected` are
 accepted on subscription but are not emitted by any current code path, so do not build a flow that
-waits on them. And `GET /api/v1/webhooks/event-types` is shadowed by `GET /api/v1/webhooks/:id` in
-the route table and answers `404 not_found`, so this list, not that endpoint, is the reference.
+waits on them.
 
 There is no `opt_out.created` event. The name is `message.opt_out`.
 
