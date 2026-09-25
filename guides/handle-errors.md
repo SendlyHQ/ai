@@ -47,13 +47,16 @@ and the webhook event `message.opt_out`.
 | 400 | `invalid_request` | You put the key in a query parameter. Keys are refused there so they cannot leak into logs. Move it to the header |
 | 403 | `insufficient_permissions` | The key is valid but lacks a scope. The message names the missing scopes. Mint a key that has them: sends need `sms:send`, lookups `sms:read`, OTP `verify:send` and `verify:read`, webhooks `webhooks:read` and `webhooks:write` |
 
-None of these are retryable. Fix the credential.
+None of these are retryable. Fix the credential. Repeated wrong keys from one address also lock
+that address out of the account for a few minutes; see [Rate limits](#rate-limits).
 
 ## Rate limits
 
 | HTTP | `error` | Recovery |
 | --- | --- | --- |
 | 429 | `rate_limit_exceeded` | Wait, then retry the identical request |
+| 429 | `too_many_failed_key_attempts` | Repeated wrong API keys from one address for the same account. Fix the key, then wait `Retry-After` seconds before sending again: until the lockout ends, requests from that address can be refused even with the right key, and each wrong-key attempt counts toward the next lockout |
+| 429 | `too_many_concurrent_verifications` | Too many first-time API key checks at once from one address. Wait `Retry-After` (1 second), then retry |
 
 Limits are per key per minute: 60 on a test key, 600 on a live key, 3000 on enterprise. Responses
 carry `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset` (seconds).
@@ -62,6 +65,8 @@ Self throttle on `X-RateLimit-Remaining` rather than waiting to be rejected. On 
 
 Do not trust `limits.messagesPerMinute` from `GET /api/v1/account` for this: it is a static hint
 that does not vary by key type. The headers are the enforced value.
+
+Both 429s from key checks carry `Retry-After` and `retryAfter`.
 
 OTP sends have their own throttles on top: 5 per phone per 10 minutes, 20 per phone per day, 100
 per account per minute, all returned as the same `rate_limit_exceeded` with a `retryAfter`.
