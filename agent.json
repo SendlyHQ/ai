@@ -44,9 +44,15 @@
       "numbers:read",
       "numbers:write",
       "tendlc:read",
-      "tendlc:write"
+      "tendlc:write",
+      "rcs:read",
+      "rcs:write",
+      "short_codes:read",
+      "short_codes:write",
+      "calls:read",
+      "calls:write"
     ],
-    "scope_note": "An unscoped key carries full access. Scopes cannot be widened after creation; mint a new key instead.",
+    "scope_note": "A key created without a scopes list gets every scope; a key whose scope list is empty is refused on every endpoint that needs a scope. Scopes cannot be widened after creation; mint a new key instead.",
     "obtain_key": "https://sendly.live/api-keys",
     "obtain_key_guide": "https://sendly.live/auth.md",
     "verify_key": "GET /credits",
@@ -94,6 +100,24 @@
       "cli": "sendly rcs send",
       "mcp_tool": "send_rcs",
       "requires": ["live_api_key", "rcs_agent"]
+    },
+    {
+      "id": "voice",
+      "name": "Voice calls",
+      "description": "Place outbound phone calls handled by your workspace's AI agents, follow them while they run, read the transcript, and fetch the recording. Configure which numbers are voice-enabled and who answers them. US and Canada only.",
+      "api": "POST /calls",
+      "cli": "sendly calls create",
+      "mcp_tool": "create_call",
+      "requires": ["live_api_key", "voice_enabled_number", "emergency_address"]
+    },
+    {
+      "id": "short_codes",
+      "name": "Short codes",
+      "description": "Apply for a 5 or 6 digit US sender and track the application through Sendly review, the carrier forms, and certification. Applied for, not bought.",
+      "api": "GET /short_codes/application",
+      "cli": "sendly short-codes application",
+      "mcp_tool": "short_codes_get_application",
+      "requires": ["api_key", "short_codes_enabled"]
     },
     {
       "id": "conversations",
@@ -181,7 +205,7 @@
       "name": "API key management",
       "description": "Create, rotate and revoke scoped API keys. A raw key value is returned exactly once.",
       "api": "POST /account/keys",
-      "cli": "sendly keys create --type test",
+      "cli": "sendly keys create --name agent --type test",
       "mcp_tool": "create_api_key",
       "requires": ["api_key_or_cli_session"]
     }
@@ -234,7 +258,7 @@
   },
   "idempotency": {
     "headers": ["Idempotency-Key", "X-Idempotency-Key"],
-    "note": "Honoured on message send, group send, scheduling, batches and verification start. Not honoured on number purchase, so never build a naive retry loop around buying a number.",
+    "note": "Honoured on message send, group send, scheduling, batches, verification start and number purchase, among others. The key is recorded only when the first request completes, so reuse it when retrying a number purchase and space the retry out: two purchases in flight together can both go through.",
     "reference": "https://sendly.live/docs/idempotency"
   },
   "mcp": {

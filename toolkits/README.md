@@ -34,7 +34,7 @@ is a reserved word and the sender argument is spelled `from_`, exactly as the Se
 SDK spells it.
 
 **Quiet hours are per country, not global.** `messageType` defaults to `marketing`, which is
-held outside the recipient country's quiet-hours window. That window is 9pm to 8am in the US
+held outside the recipient country's quiet-hours window. That window is 9pm to 8am in most of the US
 and 8pm to 9am in the UK, and differs again elsewhere. A tool description that states one
 global window teaches the model to mislabel sends as `transactional` to get around a rule it
 has been told wrongly. Transactional is for one-time passwords, alerts and receipts only.

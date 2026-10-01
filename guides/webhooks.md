@@ -190,7 +190,7 @@ whole value and store it.
     "object": {
       "id": "0f1c9d2e-6b74-4c1a-9f0d-2b7c5e83a411",
       "organization_id": "8c41d0b7-25ae-4f39-b6d1-0e937a5c1284",
-      "to": "+15551234567",
+      "to": "+14155550142",
       "from": "SENDLY",
       "text": "Your order shipped",
       "status": "delivered",
@@ -227,7 +227,7 @@ A **verification** event carries a different object:
     "object": {
       "id": "ver_7c1f4b9a83d24e6fa0b512d7e93c4a18",
       "organization_id": "8c41d0b7-25ae-4f39-b6d1-0e937a5c1284",
-      "phone": "+15551234567",
+      "phone": "+14155550142",
       "status": "verified",
       "delivery_status": "delivered",
       "attempts": 1,
@@ -254,9 +254,9 @@ An **opt-out** event carries the identity and the keyword, and nothing about a m
   "data": {
     "object": {
       "organization_id": "8c41d0b7-25ae-4f39-b6d1-0e937a5c1284",
-      "phone_number": "+15551234567",
+      "phone_number": "+14155550142",
       "keyword": "STOP",
-      "from_number": "+18885551234",
+      "from_number": "+18885550142",
       "timestamp": "2026-08-27T10:04:19.221Z"
     }
   }
@@ -304,11 +304,18 @@ asked for changes before sending it on, with a `note`). Ids in these payloads ar
 
 Calls (early access): `call.started` (answered), `call.completed` (ended — the payload's `status` is
 `completed`, `cancelled`, `declined`, `no_answer`, `busy` or `failed`, with `duration_secs`), and
-`call.recording.ready` (a recording can be fetched via `GET /api/calls/:id`).
+`call.recording.ready` (a recording can be fetched via `GET /api/v1/calls/:id/recording`).
+
+Short codes (early access): `short_code.action_required`, `short_code.rejected`, `short_code.filed`
+and `short_code.live`, tracking an application through Sendly's review, the carrier filing, and
+certification.
 
 One honest caveat. `message.retrying`, `draft.created`, `draft.approved` and `draft.rejected` are
 accepted on subscription but are not emitted by any current code path, so do not build a flow that
 waits on them.
+
+`GET /api/v1/webhooks/event-types` returns the same list at runtime as
+`{ "events": [{ "type", "description" }] }`, and needs no API key.
 
 There is no `opt_out.created` event. The name is `message.opt_out`.
 
@@ -335,10 +342,15 @@ curl "https://sendly.live/api/v1/webhooks/whk_4c1f.../deliveries?limit=20" \
   "deliveries": [
     {
       "id": "del_1a2b3c...",
+      "webhook_id": "whk_4c1f...",
+      "event_id": "evt_9c31a7e40b2d5f8613ca94...",
       "event_type": "message.delivered",
       "status": "delivered",
+      "success": true,
       "response_status_code": 200,
+      "http_status": 200,
       "response_time": 142,
+      "response_time_ms": 142,
       "response_body": "",
       "error_message": null,
       "error_code": null,
@@ -353,6 +365,11 @@ curl "https://sendly.live/api/v1/webhooks/whk_4c1f.../deliveries?limit=20" \
 }
 ```
 
+`event_id` is the id the delivered event carried, the one to dedupe on. `http_status` and
+`response_time_ms` are `0` where `response_status_code` and `response_time` are `null`, as on an
+attempt that got no response. Add `status` to the query to list only, for example, `failed`
+deliveries.
+
 `error_code` on a failed delivery is one of `timeout`, `connection_error`, `http_error`,
 `invalid_response`, `ssrf_blocked`, `circuit_open`, `max_retries_exceeded`, `webhook_disabled`,
 `invalid_url`.
@@ -360,7 +377,7 @@ curl "https://sendly.live/api/v1/webhooks/whk_4c1f.../deliveries?limit=20" \
 ## Retries and the circuit breaker
 
 A delivery gets up to 6 attempts. After each failure the next one is scheduled with a delay of, in
-order, 0 seconds, 1 minute, 5 minutes, 30 minutes, 2 hours, 24 hours, measured from that failure.
+order, 5 minutes, 5 minutes, 30 minutes, 2 hours and 24 hours, measured from that failure.
 
 **A 4xx response from your endpoint is not retried at all.** Only 5xx responses, timeouts and
 connection failures are. This matters more than it looks: if your signature verifier returns 401
@@ -406,7 +423,10 @@ breaker is open, so reset the circuit first.
 
 To recover events that were never delivered at all, for example because the endpoint was
 unreachable during an outage, use `POST /api/v1/webhooks/{id}/backfill`. Preview what it would send
-with `GET /api/v1/webhooks/{id}/recovery-preview` first.
+with `GET /api/v1/webhooks/{id}/recovery-preview` first. Both replay and backfill keep event ids:
+a replayed delivery carries its original event id, and a backfilled message event carries the
+same deterministic id the original dispatch used, so your event-id dedupe still holds. Do not
+dedupe on `data.object.id` instead: a message's sent and delivered events share it.
 
 ## Rotating the secret
 

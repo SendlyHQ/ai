@@ -73,7 +73,7 @@ def _failure(exc: SendlyError) -> Dict[str, Any]:
 class SendSmsInput(BaseModel):
     """Arguments for send_sms."""
 
-    to: str = Field(description="Recipient phone number in E.164 format, e.g. +14155552671")
+    to: str = Field(description="Recipient phone number in E.164 format, e.g. +14155550142")
     text: str = Field(description="Message body to send")
     from_: Optional[str] = Field(
         default=None,
@@ -88,7 +88,7 @@ class SendSmsInput(BaseModel):
         default=None,
         description=(
             "Either 'marketing' or 'transactional'. Defaults to marketing, which is "
-            "blocked during the recipient country's quiet hours (9pm to 8am in the "
+            "blocked during the recipient country's quiet hours (9pm to 8am in most of the "
             "US, 8pm to 9am in the UK, a per-country window elsewhere). Use "
             "transactional only for one-time passwords, alerts and receipts, which "
             "send at any hour. Labelling promotional content as transactional is a "
@@ -107,7 +107,7 @@ class SendSmsInput(BaseModel):
 class SendOtpInput(BaseModel):
     """Arguments for send_otp."""
 
-    to: str = Field(description="Recipient phone number in E.164 format, e.g. +14155552671")
+    to: str = Field(description="Recipient phone number in E.164 format, e.g. +14155550142")
     app_name: Optional[str] = Field(
         default=None,
         description=(

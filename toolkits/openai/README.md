@@ -33,7 +33,7 @@ close to mechanical.
 
 ```bash
 pip install openai requests
-export SENDLY_API_KEY=sk_test_...
+export SENDLY_API_KEY=sk_test_v1_YOUR_API_KEY
 ```
 
 ```python
@@ -75,7 +75,7 @@ def call_sendly_tool(name, args, call_id):
 client = OpenAI()
 tools = json.load(open("tools.json"))["tools"]
 
-messages = [{"role": "user", "content": "Text +14155552671 that their table is ready."}]
+messages = [{"role": "user", "content": "Text +14155550142 that their table is ready."}]
 response = client.chat.completions.create(
     model="gpt-4o", messages=messages, tools=tools
 )

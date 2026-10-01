@@ -44,10 +44,10 @@ key as a bearer token.
 
 `https://mcp.sendly.live/mcp` is accepted as well and behaves identically.
 `GET https://mcp.sendly.live/health` needs no auth and is safe to probe, but it is a
-liveness check and nothing more. The `version` and `tools` fields in its body are
-constants compiled into the worker, not read from the running server, so do not use
-either to decide anything. `tools/list` is the only honest answer to what a server
-has.
+liveness check and nothing more. Its `version` and `tools` fields describe the build
+that is deployed, not the `@sendly/mcp` package on npm, and a build from before 4.3.0
+reports fixed values that were never updated, so do not use either to decide anything.
+`tools/list` is the only honest answer to what a server has.
 
 The server rejects anything that is not a `sk_test_v1_` or `sk_live_v1_` key before
 it opens a session, so a malformed key fails fast with `401 invalid_key` rather than
@@ -72,8 +72,8 @@ The same server, running on your machine, reading the key from the environment:
 ```
 
 `SENDLY_API_KEY` is required and the process exits immediately without it.
-`SENDLY_BASE_URL` overrides the API host and must be HTTPS unless it points at
-`localhost` or `127.0.0.1`.
+`SENDLY_BASE_URL` overrides the API host and must be HTTPS unless it points at this
+machine: `localhost`, a `*.localhost` name, an address in `127.0.0.0/8`, or `[::1]`.
 
 Prefer the hosted server unless you specifically need the API traffic to originate
 from your own machine.
@@ -84,6 +84,11 @@ deployed; `@sendly/mcp` carries the copy that existed at its last npm publish. T
 two can therefore expose different tools at the same moment. Call `tools/list`
 against whichever server you connected to; that is the only authoritative list for
 the process in front of you.
+
+The request layer differs too. The local server puts an auto-generated
+`Idempotency-Key` on every POST except batch sends; the hosted server sends none.
+Neither retries a failed request, so each tool call is sent once, and calling a tool
+again after a timeout is a second request.
 
 The full generated tool list, with parameters, is in
 [`reference/mcp-tools.md`](./reference/mcp-tools.md). It is generated from the same
@@ -117,14 +122,17 @@ rules and the failure modes, and pair well with either MCP or an SDK.
 npx skills add SendlyHQ/sendly-skills
 ```
 
-Published skills: `sending-sms`, `verifying-phones`, `sms-best-practices`.
+Published skills: `sending-sms`, `sending-whatsapp`, `verifying-phones`, `sms-best-practices`,
+`shortening-links`, `managing-numbers`, `rotating-api-keys`, `upgrading-business-entity` and
+`voice-calls`.
 
 ---
 
 ## SDKs
 
-Every SDK reads the same `SENDLY_API_KEY`, targets the same base URL, and returns the
-same objects. Pick your language and send one message.
+Every SDK takes the API key as a constructor argument, targets the same base URL, and
+returns the same objects. None of them reads the environment for the key, so each
+example below passes `SENDLY_API_KEY` in. Pick your language and send one message.
 
 **Node.js** ([`SendlyHQ/sendly-node`](https://github.com/SendlyHQ/sendly-node))
 
@@ -251,13 +259,14 @@ brew install SendlyHQ/tap/sendly
 ```
 
 ```bash
-sendly login
+export SENDLY_API_KEY=sk_test_v1_YOUR_API_KEY
 sendly send --to "+15005550000" --text "Hello from Sendly"
 ```
 
-`sendly login` runs a browser device-approval flow and stores the session for you.
-If you already have a key, exporting `SENDLY_API_KEY` is enough and no login is
-needed. Add `--json` to any command for machine-readable output, and run
+Sending needs an API key: export `SENDLY_API_KEY`, or store one with
+`sendly login --api-key <key>`. A plain `sendly login` runs a browser device-approval
+flow and stores a session, which can manage the account but is refused on sends with
+`api_key_required`. Add `--json` to any command for machine-readable output, and run
 `sendly doctor` when something is misconfigured.
 
 ---

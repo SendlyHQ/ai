@@ -56,7 +56,7 @@ that address out of the account for a few minutes; see [Rate limits](#rate-limit
 | --- | --- | --- |
 | 429 | `rate_limit_exceeded` | Wait, then retry the identical request |
 | 429 | `too_many_failed_key_attempts` | Repeated wrong API keys from one address for the same account. Fix the key, then wait `Retry-After` seconds before sending again: until the lockout ends, requests from that address can be refused even with the right key, and each wrong-key attempt counts toward the next lockout |
-| 429 | `too_many_concurrent_verifications` | Too many first-time API key checks at once from one address. Wait `Retry-After` (1 second), then retry |
+| 429 | `too_many_concurrent_verifications` | Too many first-time API key checks at once from one address. The request never ran. Wait `Retry-After` (1 second), then retry the identical request |
 
 Limits are per key per minute: 60 on a test key, 600 on a live key, 3000 on enterprise. Responses
 carry `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset` (seconds).
@@ -67,6 +67,9 @@ Do not trust `limits.messagesPerMinute` from `GET /api/v1/account` for this: it 
 that does not vary by key type. The headers are the enforced value.
 
 Both 429s from key checks carry `Retry-After` and `retryAfter`.
+
+A 429 is never recorded under an `Idempotency-Key`, so retrying under the same key runs the request
+again once the limit clears instead of replaying the refusal.
 
 OTP sends have their own throttles on top: 5 per phone per 10 minutes, 20 per phone per day, 100
 per account per minute, all returned as the same `rate_limit_exceeded` with a `retryAfter`.
@@ -79,7 +82,7 @@ them are fixed by retrying.
 | HTTP | `error` | Meaning | Recovery |
 | --- | --- | --- | --- |
 | 403 | `destination_not_authorized` | The account's sender is not approved for that destination country, for example an international only setup texting US or Canada | Complete the sender approval for that region. See [go-live.md](go-live.md) |
-| 403 | `sender_not_authorized` | You named a `from` the workspace owns, but it is not authorized for this destination yet | If the number was just assigned to a campaign, retry in a few minutes. Otherwise assign it |
+| 403 | `sender_not_authorized` | You named a `from` the workspace owns, but it is not authorized for this destination yet | If the number was just assigned to a campaign, retry in a few minutes. Otherwise contact support |
 | 400 | `invalid_from_number` | The `from` is not owned by this workspace, is inactive, or is not registered to send. Raised for a US or Canadian destination, and for any destination while the account is not yet authorized to send at all | Omit `from` to use the account default, or use a number from `GET /api/v1/numbers` |
 | 403 | `registration_required` (`SENDER_ID_NOT_REGISTERED`) | 73 destination countries require the sender ID to be registered first | The account owner registers the sender for that country. The response carries `countryCode`, `countryName` and a `registrationUrl`. Registration takes 15 or more business days, so route around it meanwhile |
 | 400 | `unsupported_destination` | The destination country is not supported at all | Do not retry. The body carries the detected `country` |
@@ -87,7 +90,8 @@ them are fixed by retrying.
 | 403 | `live_key_required` | Buying a number, registering a 10DLC brand or campaign, or assigning a number, attempted with a test key | Use a live key. These actions are never simulated |
 
 A live key that is not yet authorized does **not** produce any of these for a plain send with no
-`from`. It returns `201` with `simulated: true` and a `simulatedReason` instead.
+`from`, other than `unsupported_destination`. It returns `201` with `simulated: true` and a
+`simulatedReason` instead.
 
 An unowned `from` on an **authorized** account sending **internationally** produces no error at
 all: the `from` is dropped, the verified sender ID is used, and the substitution is reported in
@@ -138,8 +142,9 @@ so reconcile against the batch result rather than assuming every input was sent.
 | 422 | `idempotency_key_mismatch` | This key was already used with a different body. Keys bind to the body they first ran with. Use a fresh key for a different request, and reuse a key only to retry the identical one |
 
 A replayed response arrives with `Idempotency-Replayed: true` and the original status code, which
-may itself be a 4xx. Use a new key when you want a previously failed request to genuinely run
-again.
+may itself be a 4xx. 2xx and 4xx responses are recorded, except 429; 5xx and 429 responses are
+never recorded, so a retry of either under the same key runs again. Use a new key when you want a
+previously failed 4xx request to genuinely run again.
 
 ## Not found, and the shape of a wrong id
 
@@ -156,7 +161,7 @@ returning a 403 when the feature is off.
 
 | HTTP | `error` | Recovery |
 | --- | --- | --- |
-| 500 | `internal_error` | Retry with the same `Idempotency-Key`. 5xx responses are deliberately not recorded for idempotency, precisely so the retry can execute |
+| 500 | `internal_error` | Retry with the same `Idempotency-Key`. 5xx responses are deliberately not recorded for idempotency, precisely so the retry can execute. That also means a retry is not deduplicated: if the request had already sent before it failed, the retry sends again, so check `GET /api/v1/messages` before retrying a send |
 | 500 | `delivery_failed` | The OTP SMS could not be handed to the carrier. The verification is marked failed. Start a new one |
 | 500 | `configuration_error` | The account is missing a messaging profile. Human setup step, not retryable |
 | 502 | `search_failed` | Number search upstream failed. Retry |
@@ -197,11 +202,18 @@ sits in `retrying` while that happens. Do not resend a message in `retrying`: yo
 ## A retry policy that is correct
 
 ```
-401, 403, 400, 402, 404, 422  -> do not retry, fix the request or the account
-429                           -> wait Retry-After, retry identical
-5xx, 502, 503                 -> retry with the same Idempotency-Key, exponential backoff
-201 with simulated: true      -> not a delivery, check go-live setup
+401, 403, 400, 402, 404, 422        -> do not retry, fix the request or the account
+429 too_many_failed_key_attempts    -> do not retry, fix the key, then wait Retry-After
+429 (other, except the four below)  -> wait Retry-After, retry identical, same Idempotency-Key
+5xx, 502, 503                       -> retry with the same Idempotency-Key, exponential backoff
+201 with simulated: true            -> not a delivery, check go-live setup
 ```
+
+Four 429s are not a short wait: `max_attempts_exceeded` from a verification check (start a new
+verification), `whatsapp_signup_limit_reached` (5 failed WhatsApp connection attempts in 24 hours;
+try again once the oldest is a day old), `daily_call_limit` (try again tomorrow) and
+`quota_exceeded` from a scheduled or batch send (the workspace's monthly message quota is used up;
+it clears when the month resets or an admin raises the quota).
 
 ## Next
 

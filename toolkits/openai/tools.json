@@ -10,7 +10,7 @@
           "properties": {
             "to": {
               "type": "string",
-              "description": "Recipient phone number in E.164 format (e.g. +14155552671)"
+              "description": "Recipient phone number in E.164 format (e.g. +14155550142)"
             },
             "text": {
               "type": "string",
@@ -23,7 +23,7 @@
             "messageType": {
               "type": "string",
               "enum": ["marketing", "transactional"],
-              "description": "Compliance classification. Defaults to marketing, which is blocked during the recipient country's quiet hours (9pm to 8am in the US, 8pm to 9am in the UK, and a per-country window elsewhere). Use transactional only for one-time passwords, alerts and receipts, which send at any hour. Labelling promotional content as transactional is a compliance violation."
+              "description": "Compliance classification. Defaults to marketing, which is blocked during the recipient country's quiet hours (9pm to 8am in most of the US, 8pm to 9am in the UK, and a per-country window elsewhere). Use transactional only for one-time passwords, alerts and receipts, which send at any hour. Labelling promotional content as transactional is a compliance violation."
             },
             "metadata": {
               "type": "object",
@@ -44,7 +44,7 @@
           "properties": {
             "to": {
               "type": "string",
-              "description": "Recipient phone number in E.164 format (e.g. +14155552671)"
+              "description": "Recipient phone number in E.164 format (e.g. +14155550142)"
             },
             "app_name": {
               "type": "string",

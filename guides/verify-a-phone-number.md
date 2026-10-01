@@ -57,7 +57,7 @@ All optional except `to`.
 
 | Field | Default | Range |
 | --- | --- | --- |
-| `to` | required | E.164, for example `+15551234567` |
+| `to` | required | E.164, for example `+14155550142` |
 | `code_length` | 6 | 4 to 10, clamped |
 | `timeout_secs` | 300 | 60 to 3600, clamped |
 | `app_name` | the account's brand name, else `App` | interpolated into the message body |

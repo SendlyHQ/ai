@@ -89,6 +89,8 @@
     "messaging",
     "whatsapp",
     "rcs",
+    "voice_calls",
+    "short_codes",
     "verification",
     "conversations",
     "contacts",

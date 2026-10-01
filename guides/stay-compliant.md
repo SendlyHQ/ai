@@ -7,8 +7,9 @@ anything reaches a carrier, so getting them right up front is cheaper than handl
 ## The default that surprises people
 
 `messageType` is optional on `POST /api/v1/messages`. Omitting it does **not** mean "unclassified".
-Anything that is not exactly `transactional` is treated as **marketing**, which is the stricter
-path, and marketing is subject to quiet hours.
+A missing `messageType`, or one sent under any other key, is treated as **marketing**, which is the
+stricter path, and marketing is subject to quiet hours. A value other than `marketing` or
+`transactional` is refused with `400 invalid_request`.
 
 Two ways to hit this by accident:
 
@@ -29,8 +30,8 @@ ignored. Both send as marketing. The field is `messageType`, camelCase, and it t
 Quiet hours are evaluated against the **recipient's** local time, derived from their country, and
 for US and Canada numbers from the area code's timezone. The window is different in different
 countries. There is no single global window, and assuming the US window is the most common way to
-get this wrong: a send that is legal at 05:44 in the United States is blocked in the United
-Kingdom, whose window is wider at both ends.
+get this wrong: a send that is legal at 08:30 in most of the United States is blocked in the
+United Kingdom, whose window is wider at both ends.
 
 Some countries add day restrictions on top: no marketing on Sundays, no marketing on Saturdays, or
 an earlier Saturday cutoff.
@@ -66,7 +67,7 @@ curl -X POST https://sendly.live/api/v1/messages/schedule \
     "to": "+447700900123",
     "text": "Two seats left on the Saturday tour",
     "messageType": "marketing",
-    "scheduledAt": "2026-08-27T09:00:00.000Z"
+    "scheduledAt": "<nextAllowedTime from the error>"
   }'
 ```
 
@@ -139,7 +140,7 @@ You do not implement any of this, and you must not disable it.
 ```json
 {
   "error": "contact_opted_out",
-  "message": "Recipient +15551234567 has opted out of messages. Cannot send."
+  "message": "Recipient +14155550142 has opted out of messages. Cannot send."
 }
 ```
 
@@ -156,12 +157,12 @@ support desk, push it to Sendly so the suppression is enforced on every future s
 curl -X POST https://sendly.live/api/v1/contacts/opt-out \
   -H "Authorization: Bearer $SENDLY_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"phone_number": "+15551234567"}'
+  -d '{"phone_number": "+14155550142"}'
 ```
 
 ```json
 {
-  "phone_number": "+15551234567",
+  "phone_number": "+14155550142",
   "opted_out": true,
   "contact_id": "b2d4f8a1-3c67-4e90-8f21-5a0c7d9e4b13"
 }

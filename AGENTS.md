@@ -18,11 +18,14 @@ A REST API for reaching phones. One credential and one base URL gets you:
 
 - **SMS and MMS**, domestic and international
 - **WhatsApp** and **RCS** as additional channels
+- **Voice calls** placed and answered by your workspace's AI agents, with transcripts and recordings
 - **Phone verification (OTP)**, send a code and check it
 - **Conversations**, inbound replies threaded against contacts, with drafts and rules
 - **Contacts and lists**, with carrier lookup and opt-out state
 - **Campaigns, templates and batches** for bulk sending
 - **Phone numbers**, search, buy, configure, and US 10DLC registration
+- **Short codes**, applied for rather than bought, tracked through carrier certification
+- **Link shortening**, branded short links with per-link click tracking
 - **Webhooks** for delivery status, inbound messages and lifecycle events
 
 Base URL: `https://sendly.live/api/v1`
@@ -84,8 +87,10 @@ A JSON body with a `balance` field means you are authenticated.
 ### Scopes
 
 Keys can be scoped. The scope names follow `resource:action`, for example
-`sms:send`, `sms:read`, `verify:send`, `webhooks:write`, `contacts:read`. An
-unscoped key carries full access. If a call returns a scope error, the key is
+`sms:send`, `sms:read`, `verify:send`, `webhooks:write`, `contacts:read`. A key
+created without a `scopes` list gets every scope, but a key whose scope list is empty
+is refused with `403 insufficient_permissions` on every endpoint that needs a scope.
+If a call returns a scope error, the key is
 narrower than the endpoint requires; mint a new key rather than trying to widen
 an existing one.
 
@@ -186,18 +191,20 @@ instead, because simulating them would hide a real misconfiguration:
   sender does not cover that destination country. The response names
   `destinationCountry`.
 - `403 sender_not_authorized`, when the request explicitly names a `from` number
-  the workspace owns and that is active, but which is not authorised to send to
-  that destination. A freshly bought US local number that has not yet been assigned
-  to a registered 10DLC campaign is the usual cause.
+  the workspace owns and that is active (and, for a US local number, assigned to a
+  10DLC campaign), but the account is not yet authorised to send to that destination.
+  A US local number that has not been assigned to a registered 10DLC campaign gets
+  `400 invalid_from_number` instead.
 
 Both mean a human has configuration to finish. Neither is retryable.
 
 ### Idempotency
 
 A small set of write endpoints honour an idempotency key, sent as either
-`Idempotency-Key` or `X-Idempotency-Key`. Sending, scheduling, batching, group MMS
-and starting a verification are all covered. Number purchase is **not**, so never
-build a naive retry loop around buying a number.
+`Idempotency-Key` or `X-Idempotency-Key`. Sending, scheduling, batching, group MMS,
+starting a verification and buying a number are all covered. The key is recorded
+only when the first request completes, so on a number purchase reuse the same key
+and space the retry out: two purchases in flight together can both go through.
 
 The exact endpoint list is at <https://sendly.live/docs/idempotency>. Use a fresh
 UUID per logical operation, and reuse the same one on every retry of that
@@ -208,7 +215,7 @@ operation.
 ## 4. Phone numbers must be E.164
 
 `+` followed by country code followed by the subscriber number, digits only.
-`+15551234567`. Not `(555) 123-4567`, not `5551234567`, not `001555...`.
+`+14155550142`. Not `(415) 555-0142`, not `4155550142`, not `001415...`.
 
 A malformed number is rejected before anything else happens, and the error code
 depends on the endpoint. `POST /api/v1/messages` returns `400 invalid_request` with
@@ -246,8 +253,9 @@ curl -X POST https://sendly.live/api/v1/verify/{id}/check \
 Success returns `status: "verified"` and `verified_at`. A wrong code returns
 `400 invalid_code` with `remaining_attempts`, so show the human how many tries are
 left rather than a generic failure. Attempts are capped, and the verification is
-burned once exceeded; resend with `POST /api/v1/verify/{id}/resend` instead of
-retrying past the cap.
+burned once exceeded: start a new one with `POST /api/v1/verify` instead of retrying
+past the cap. Resend (`POST /api/v1/verify/{id}/resend`) only works on an expired
+verification, or a pending one whose delivery failed.
 
 Codes are also rate limited per destination phone number, independently of the
 per-key limit, which is deliberate: it is what stops your integration being used to
@@ -293,9 +301,9 @@ means a green send.
 **If you omit `messageType`, it defaults to `marketing`.** Not transactional. The
 strict default is deliberate.
 
-The only two accepted values are `marketing` and `transactional`. Anything else, or
-nothing at all, resolves to `marketing`, which means quiet hours apply and your
-2am OTP does not go out.
+The only two accepted values are `marketing` and `transactional`. Any other value is
+refused with `400 invalid_request`, and leaving the field out resolves to `marketing`,
+which means quiet hours apply and your 2am OTP does not go out.
 
 - `transactional`: OTPs, receipts, shipping updates, appointment reminders, alerts.
   Not subject to quiet hours.
@@ -378,9 +386,10 @@ UNSUBSCRIBE, CANCEL, END and QUIT.
 
 The countries Sendly serves, with their compliance rules, are in
 [`reference/compliance.md`](./reference/compliance.md).
-`GET /api/v1/countries` needs no auth and returns the live list with each
-country's dial code, tier and credits per SMS, which is the right thing to call
-when you need it at runtime rather than at authoring time.
+`GET /api/v1/countries` needs no auth and returns a fixed, curated subset of those
+countries with each one's dial code, tier and credits per SMS. It is not the full
+list: a destination missing from it is not evidence that Sendly does not serve it, so
+use it as a dropdown source rather than as the authority.
 
 ---
 

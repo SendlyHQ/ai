@@ -6,7 +6,7 @@ project and import from it.
 
 ```bash
 pip install sendly langchain langchain-anthropic
-export SENDLY_API_KEY=sk_live_...
+export SENDLY_API_KEY=sk_test_v1_YOUR_API_KEY
 ```
 
 Start on a test key (`sk_test_...`) while you shape the prompt. Test keys simulate delivery
@@ -27,7 +27,7 @@ prompt = ChatPromptTemplate.from_messages([
     (
         "system",
         "You can send SMS and verify phone numbers with Sendly. Phone numbers are "
-        "always E.164, e.g. +14155552671. Only set messageType to 'transactional' "
+        "always E.164, e.g. +14155550142. Only set messageType to 'transactional' "
         "for one-time passwords, alerts and receipts. Anything promotional stays "
         "marketing, even if that means it will not go out until quiet hours end.",
     ),
@@ -39,19 +39,19 @@ agent = create_tool_calling_agent(llm, SENDLY_TOOLS, prompt)
 executor = AgentExecutor(agent=agent, tools=SENDLY_TOOLS)
 
 result = executor.invoke(
-    {"input": "Send a 6-digit login code to +14155552671 for the app Northwind."}
+    {"input": "Send a 6-digit login code to +14155550142 for the app Northwind."}
 )
 print(result["output"])
 ```
 
 By default the tools build one `Sendly` client from `SENDLY_API_KEY` on first use. To supply
-your own, for a different workspace or a longer timeout:
+your own, for another workspace's API key or a longer timeout:
 
 ```python
 from sendly import Sendly
 from sendly_tools import set_client
 
-set_client(Sendly(api_key, timeout=60.0, organization_id="org_..."))
+set_client(Sendly(api_key, timeout=60.0))
 ```
 
 ## Argument names

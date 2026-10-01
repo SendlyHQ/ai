@@ -11,7 +11,7 @@ returning `201`:
 ```json
 {
   "id": "0f1c9d2e-6b74-4c1a-9f0d-2b7c5e83a411",
-  "to": "+15551234567",
+  "to": "+14155550142",
   "from": "SENDLY-TEST",
   "text": "Your order shipped",
   "status": "delivered",
@@ -31,8 +31,9 @@ if (response.simulated) throw new Error(response.simulatedReason ?? "simulated s
 
 There are two cases where a live send fails loudly instead of simulating, and they are worth
 knowing because they mean the opposite of a silent problem: on an account that is not yet
-authorized to send there, naming a `from` returns `400 invalid_from_number` when the workspace does
-not own it and `403 sender_not_authorized` when it does, for any destination; and an account
+authorized to send there, naming a `from` returns `400 invalid_from_number` when that number cannot
+send at all (not owned by the workspace, not active, or a US local number not yet assigned to a 10DLC
+campaign) and `403 sender_not_authorized` when it could, for any destination; and an account
 authorized for one region texting outside it returns `403 destination_not_authorized`.
 
 Both of those replace a simulation. Once the account *is* authorized, an unowned `from` is a hard
@@ -139,7 +140,7 @@ curl -X POST https://sendly.live/api/v1/tendlc/campaigns \
 curl -X POST https://sendly.live/api/v1/tendlc/campaigns/<campaign id>/assign \
   -H "Authorization: Bearer $SENDLY_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"phoneNumber": "+15551234567"}'
+  -d '{"phoneNumber": "+14155550142"}'
 ```
 
 What to expect from this route:

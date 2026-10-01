@@ -99,7 +99,7 @@ With a **live key on an authorized account**, the shape is wider and `status` is
 ```json
 {
   "id": "0f1c9d2e-6b74-4c1a-9f0d-2b7c5e83a411",
-  "to": "+15551234567",
+  "to": "+14155550142",
   "from": "SENDLY",
   "text": "Hello from Sendly",
   "status": "queued",
@@ -183,7 +183,7 @@ messages there, whatever you pass.
 | `GET /messages` | Sandbox messages only | Production, add `?sandbox=true` for sandbox |
 | Webhook targets | Test URLs only (localhost, ngrok, webhook.site and similar) | Any HTTPS URL |
 | OTP | Returns the code in `sandbox_code` | Delivers the code by SMS |
-| Buying numbers, 10DLC registration, WhatsApp, RCS | Refused with `live_key_required` or a `*_requires_live_key` error | Allowed |
+| Buying numbers, 10DLC registration, RCS, WhatsApp sends, signup, template writes and profile edits (WhatsApp reads accept test keys) | Refused with `live_key_required` or a `*_requires_live_key` error | Allowed |
 
 Sends to a test key are simulated for **any** destination number, not just the sandbox numbers
 below.
@@ -204,13 +204,16 @@ handling without spending credits:
 
 ## Segments and credits
 
-The send path counts one segment per 160 characters of `text`. Credits are charged per segment, at
+The send path counts segments the way carriers bill them: GSM-7 `text` fits 160 characters in one
+segment and 153 per segment once split, but a single character outside GSM-7 (an emoji, a curly
+quote) switches the whole message to UCS-2, at 70 characters, or 67 per segment once split.
+Credits are charged per segment, at
 the destination country's rate: 2 credits for US and Canada, 8, 12, 16, 24 or 48 for other tiers.
 One credit is one US cent. A simulated send is charged 0.
 
 ## Field names that actually matter
 
-- `to` must be a string in E.164, for example `+15551234567`. Anything else is `invalid_request`.
+- `to` must be a string in E.164, for example `+14155550142`. Anything else is `invalid_request`.
 - `text` is the message body. Not `body`, not `message`.
 - `from` is optional. Omit it and the account's default sender is used. Supply one your workspace
   does not own and the handling splits on the destination:
@@ -239,14 +242,18 @@ the retry. The first completed response is replayed for 24 hours with `Idempoten
 instead of sending and charging again. Keys are 1 to 255 printable ASCII characters, and are scoped
 per account and per endpoint.
 
-Two details worth knowing. The record is written when the first request *completes*, so two
-identical requests genuinely in flight together can both send: space retries out. And 4xx responses
-are recorded too, so use a fresh key when you want a failed request to genuinely run again.
+Three details worth knowing. The record is written when the first request *completes*, so two
+identical requests genuinely in flight together can both send: space retries out. 5xx and 429
+responses are never recorded, so a retry of either under the same key runs again; that is what
+the key is for. And every other 4xx response is recorded, so use a fresh key when you want a
+failed request to genuinely run again.
 
 Idempotency is honoured on `POST /api/v1/messages`, `/messages/batch`, `/messages/group`,
-`/messages/schedule`, `/verify`, `/whatsapp/signup`, `/whatsapp/templates` and
-`/enterprise/workspaces/provision`. It is not honoured anywhere else, including
-`POST /api/v1/numbers/buy`.
+`/messages/schedule`, `/conversations/{id}/messages`, `/drafts/{id}/approve`, `/verify`,
+`/numbers/buy`, `/credits/transfer`, `/whatsapp/signup`, `/whatsapp/templates`,
+`/enterprise/workspaces/provision`, `/enterprise/workspaces/provision/bulk`,
+`/enterprise/workspaces/{id}/transfer-credits` and `/enterprise/credits/deposit`, and on every
+write under `/rcs`, `/short_codes`, `/calls` and `/voice`. It is not honoured anywhere else.
 
 ## Sending to many recipients
 

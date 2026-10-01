@@ -68,7 +68,7 @@ function failure(err: unknown): ToolFailure {
 
 const toSchema = z
   .string()
-  .describe("Recipient phone number in E.164 format, e.g. +14155552671");
+  .describe("Recipient phone number in E.164 format, e.g. +14155550142");
 
 export const sendSms = tool({
   description:
@@ -86,7 +86,7 @@ export const sendSms = tool({
       .enum(["marketing", "transactional"])
       .optional()
       .describe(
-        "Defaults to marketing, which is blocked during the recipient country's quiet hours (9pm to 8am in the US, 8pm to 9am in the UK, a per-country window elsewhere). Use transactional only for one-time passwords, alerts and receipts, which send at any hour. Labelling promotional content as transactional is a compliance violation.",
+        "Defaults to marketing, which is blocked during the recipient country's quiet hours (9pm to 8am in most of the US, 8pm to 9am in the UK, a per-country window elsewhere). Use transactional only for one-time passwords, alerts and receipts, which send at any hour. Labelling promotional content as transactional is a compliance violation.",
       ),
     metadata: z
       .record(z.string(), z.any())
