@@ -222,11 +222,13 @@ an otherwise active account.
 
 Once `verification.status` reads `verified` or `approved`:
 
-1. Create the live key.
+1. Create the live key. A test key cannot create one (`403 insufficient_permissions`), so ask the
+   human to create it in the dashboard, or use a CLI session token from the device flow in
+   <https://sendly.live/auth.md> (`$ACCESS_TOKEN` below). A live key can create further live keys.
 
 ```bash
 curl -X POST https://sendly.live/api/v1/account/keys \
-  -H "Authorization: Bearer $SENDLY_API_KEY" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name": "production", "type": "live"}'
 ```

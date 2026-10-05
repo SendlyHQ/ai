@@ -307,7 +307,7 @@ Read the access label as:
 - **`get_account`** (read-only, `GET /api/v1/account`)
   Get account info: credit balance, phone number verification status, rate limits, and API key details.
 - **`create_api_key`** (write, `POST /api/v1/account/keys`)
-  Create a new API key for this account. Returns the raw key exactly once — surface it to the user and tell them to store it securely, it cannot be retrieved again. Live keys require a verified business and a positive credit balance.
+  Create a new API key for this account. Returns the raw key exactly once — surface it to the user and tell them to store it securely, it cannot be retrieved again. Live keys require a verified business and a positive credit balance, and only a live key can create one: a test key gets 403 insufficient_permissions, so the user creates their first live key in the dashboard.
 - **`list_api_keys`** (read-only, `GET /api/v1/account/keys`)
   List the API keys for this account with their id, name, type, prefix, scopes, active state, and last-used time. Raw key values are never returned.
 - **`rotate_api_key`** (write, `POST /api/v1/account/keys/:id/rotate`)
