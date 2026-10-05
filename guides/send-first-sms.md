@@ -251,8 +251,8 @@ failed request to genuinely run again.
 Idempotency is honoured on `POST /api/v1/messages`, `/messages/batch`, `/messages/group`,
 `/messages/schedule`, `/conversations/{id}/messages`, `/drafts/{id}/approve`, `/verify`,
 `/numbers/buy`, `/credits/transfer`, `/whatsapp/signup`, `/whatsapp/templates`,
-`/enterprise/workspaces/provision`, `/enterprise/workspaces/provision/bulk`,
-`/enterprise/workspaces/{id}/transfer-credits` and `/enterprise/credits/deposit`, and on every
+`/enterprise/workspaces/provision`, `/enterprise/workspaces/provision/bulk` and
+`/enterprise/workspaces/{id}/transfer-credits`, and on every
 write under `/rcs`, `/short_codes`, `/calls` and `/voice`. It is not honoured anywhere else.
 
 ## Sending to many recipients
