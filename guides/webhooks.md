@@ -308,7 +308,11 @@ Calls (early access): `call.started` (answered), `call.completed` (ended — the
 
 Short codes (early access): `short_code.action_required`, `short_code.rejected`, `short_code.filed`
 and `short_code.live`, tracking an application through Sendly's review, the carrier filing, and
-certification.
+certification. After go-live, `short_code.suspended` says sending was paused (its `reason` is
+`non_payment` for an unpaid lease month, `compliance` or `admin`) and `short_code.reactivated`
+says it is back on. `short_code.payment_succeeded` fires for each charge that goes through (the setup
+fee at submit, or a lease month) and `short_code.payment_failed` once per lease month whose payment fails,
+with the `pause_at` date.
 
 One honest caveat. `message.retrying`, `draft.created`, `draft.approved` and `draft.rejected` are
 accepted on subscription but are not emitted by any current code path, so do not build a flow that
