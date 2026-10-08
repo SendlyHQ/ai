@@ -284,7 +284,7 @@ curl -X POST https://sendly.live/api/v1/messages \
 
 Machine-readable specs, all served from the API host:
 
-- OpenAPI 3.0: <https://sendly.live/openapi.yaml>
+- OpenAPI 3.1: <https://sendly.live/openapi.yaml> (JSON: <https://sendly.live/openapi.json>)
 - OpenAI function-calling tool definitions: <https://sendly.live/openai-tools.json>
 - MCP discovery: <https://sendly.live/.well-known/mcp.json>
 - Everything, indexed for LLMs: <https://sendly.live/llms.txt>
