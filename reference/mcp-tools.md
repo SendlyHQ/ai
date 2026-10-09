@@ -320,11 +320,11 @@ Read the access label as:
 3 tools.
 
 - **`shorten_url`** (write, `POST /api/v1/links`)
-  Mint a branded short link for a destination URL. Branded owned-domain links improve SMS deliverability (carriers filter public shorteners) and track clicks. Returns { code, shortUrl, destinationUrl }. Gated behind the url_shortener rollout flag — returns 'not_found' until the flag is on for your account.
+  Mint a branded short link for a destination URL. Branded owned-domain links improve SMS deliverability (carriers filter public shorteners) and track clicks. Returns { code, shortUrl, destinationUrl }. Needs a live API key (test keys get live_key_required, 403) of a workspace with an approved business verification (else business_verification_required, 403), the links:write scope (or sms:send on a key made before the links scopes) and, in a team workspace, a member or higher. A workspace can create 1,000 links per UTC day (daily_link_limit_reached, 429). Gated behind the url_shortener rollout flag: returns 'not_found' until the flag is on for your account.
 - **`list_short_links`** (read-only, `GET /api/v1/links`)
-  List the branded short links this workspace has created, newest first, with click counts, a 14-day daily click histogram (spark), latest country/time, and disabled state.
+  List the branded short links this workspace has created, newest first, with click counts, a 14-day daily click histogram (spark), latest country/time, and disabled state. Needs the links:read scope (or sms:read on a key made before the links scopes).
 - **`set_short_link_disabled`** (write, `PATCH /api/v1/links/:id`)
-  Enable or disable a branded short link (a per-link kill switch). A disabled link's redirect returns 404 until it is re-enabled.
+  Enable or disable a branded short link (a per-link kill switch). A disabled link's redirect returns 410 until it is re-enabled. Needs the links:write scope (or sms:send on a key made before the links scopes) and, in a team workspace, an owner or admin. A link Sendly disabled cannot be re-enabled (link_disabled_by_sendly, 409).
 
 ## Enterprise workspaces
 

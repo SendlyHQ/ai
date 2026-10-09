@@ -49,6 +49,8 @@
       "rcs:write",
       "short_codes:read",
       "short_codes:write",
+      "links:read",
+      "links:write",
       "calls:read",
       "calls:write"
     ],
