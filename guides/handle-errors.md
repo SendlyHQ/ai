@@ -164,7 +164,7 @@ returning a 403 when the feature is off.
 | 500 | `internal_error` | Retry with the same `Idempotency-Key`. 5xx responses are deliberately not recorded for idempotency, precisely so the retry can execute. That also means a retry is not deduplicated: if the request had already sent before it failed, the retry sends again, so check `GET /api/v1/messages` before retrying a send |
 | 500 | `delivery_failed` | The OTP SMS could not be handed to the carrier. The verification is marked failed. Start a new one |
 | 500 | `configuration_error` | The account is missing a messaging profile. Human setup step, not retryable |
-| 502 | `search_failed` | Number search upstream failed. Retry |
+| 503 | `search_failed` | Number search upstream failed. Retry |
 | 503 | (number buy) | Transient pricing or search failure during a purchase. Retryable, unlike a `buy_failed` |
 
 ## Failure codes on a delivered message
@@ -205,7 +205,7 @@ sits in `retrying` while that happens. Do not resend a message in `retrying`: yo
 401, 403, 400, 402, 404, 422        -> do not retry, fix the request or the account
 429 too_many_failed_key_attempts    -> do not retry, fix the key, then wait Retry-After
 429 (other, except the four below)  -> wait Retry-After, retry identical, same Idempotency-Key
-5xx, 502, 503                       -> retry with the same Idempotency-Key, exponential backoff
+5xx                                 -> retry with the same Idempotency-Key, exponential backoff
 201 with simulated: true            -> not a delivery, check go-live setup
 ```
 
