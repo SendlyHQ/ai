@@ -428,7 +428,8 @@ breaker is open, so reset the circuit first.
 
 To recover events that were never delivered at all, for example because the endpoint was
 unreachable during an outage, use `POST /api/v1/webhooks/{id}/backfill`. Preview what it would send
-with `GET /api/v1/webhooks/{id}/recovery-preview` first. Both replay and backfill keep event ids:
+with `GET /api/v1/webhooks/{id}/recovery-preview` first. Delivery logs are kept for 30 days, so
+backfill and the preview only reach back 29 days. Both replay and backfill keep event ids:
 a replayed delivery carries its original event id, and a backfilled message event carries the
 same deterministic id the original dispatch used, so your event-id dedupe still holds. Do not
 dedupe on `data.object.id` instead: a message's sent and delivered events share it.
